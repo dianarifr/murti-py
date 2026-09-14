@@ -14,6 +14,7 @@ import json
 
 from urllib.parse import urlparse
 from lamp import LampController
+from lamp_server import start_lamp_server
 
 
 # =========================
@@ -182,10 +183,10 @@ class ScaleReceiver:
             return False
 
     # ==================================
-    # WATCHDOG
+    # SERIAL RESPONSE
     # ==================================
 
-    def watchdog_loop(self):
+    def serial_response_loop(self):
         while True:
             if self.connected:
                 timeout = time.time() - self.last_data_time
@@ -517,6 +518,35 @@ class ScaleReceiver:
         except Exception as e:
             print(f"❌ Gagal menulis file {self.output_file_path}: {e}")
 
+    # ==================================
+    # LOGIK KEDIP LAMPU DARI HTML
+    # ==================================
+
+    def trigger_lamp_from_html(self, status_type, code=None):
+        if status_type == 'pre_send':
+            print("📡 Mengirim data ke server...")
+            self.lamp.blink_green(duration=3)
+
+        elif code == 201 or status_type == 'success':
+            print("✅ Sukses: Data terkirim ke server")
+            self.lamp.green_on(duration=10)
+
+        elif (code and code not in [201, 500]) or status_type == 'warning':
+            print("🟡 Warning/Custom Error dari server")
+            self.lamp.blink_red(duration=5)
+
+        elif status_type == 'invalid_json':
+            print("❌ Response bukan JSON")
+            self.lamp.blink_both(duration=5)
+
+        elif code == 500 or status_type == 'error':
+            print("❌ Error kirim: Terjadi kesalahan server/koneksi")
+            self.lamp.blink_both(duration=5)
+
+        else:
+            print("❌ Error kirim ke server")
+            self.lamp.blink_both(duration=5)
+
     # =========================
     # START SYSTEM
     # =========================
@@ -528,7 +558,7 @@ class ScaleReceiver:
         ).start()
 
         threading.Thread(
-            target=self.watchdog_loop,
+            target=self.serial_response_loop,
             daemon=True
         ).start()
 
@@ -544,6 +574,12 @@ class ScaleReceiver:
 
         threading.Thread(
             target=self.api_worker_loop,
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=start_lamp_server,
+            args=(self,),
             daemon=True
         ).start()
 
