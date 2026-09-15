@@ -85,6 +85,7 @@ class ScaleReceiver:
         self.is_stable = False
 
         self.last_frame_array = None
+        self.stable_frame_array = None
 
         self.pending_rfid = None
         self.already_sent = False
@@ -238,16 +239,16 @@ class ScaleReceiver:
         with self.lock:
             if not self.is_stable:
                 should_trigger_lamp = True
-                part1, weight, part3 = self.last_frame_array
-                stable_frame = self.last_frame_array.copy()
+                self.stable_frame_array = self.last_frame_array.copy()
+                part1, weight, part3 = self.stable_frame_array
                 print(f"🔥 Timbangan stabil: {weight}")
                 self.is_stable = True
             self.try_send()
 
         if should_trigger_lamp:
             self.lamp.red_on()
-            if stable_frame is not None:
-                self.write_to_file(stable_frame, self.api_key)
+            if self.stable_frame_array is not None:
+                self.write_to_file(self.stable_frame_array, self.api_key)
 
     def reset_state(self):
         with self.lock:
@@ -255,6 +256,7 @@ class ScaleReceiver:
             self.is_stable = False
             self.pending_rfid = None
             self.already_sent = False
+            self.stable_frame_array = None
             # self.start_same_time = None
         self.lamp.off()
         self.write_to_file(None)
@@ -272,7 +274,7 @@ class ScaleReceiver:
             self.already_sent = True
             payload = {
                 "rfid": self.pending_rfid,
-                "data": self.last_frame_array,
+                "data": self.stable_frame_array,
                 "api_key": self.api_key,
             }
             self.api_queue.put(payload)
