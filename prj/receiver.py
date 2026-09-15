@@ -522,29 +522,34 @@ class ScaleReceiver:
     # LOGIK KEDIP LAMPU DARI HTML
     # ==================================
 
-    def trigger_lamp_from_html(self, status_type, code=None):
+    def trigger_lamp_from_html(self, status_type, code=None, message=None):
         if status_type == 'pre_send':
             print("📡 Mengirim data ke server...")
             self.lamp.blink_green(duration=3)
 
         elif code == 201 or status_type == 'success':
-            print("✅ Sukses: Data terkirim ke server")
+            msg = message if message else "Data terkirim ke server"
+            print(f"✅ Sukses: {msg}")
             self.lamp.green_on(duration=10)
 
         elif (code and code not in [201, 500]) or status_type == 'warning':
-            print("🟡 Warning/Custom Error dari server")
+            msg = message if message else "Warning/Custom Error dari server"
+            print(f"🟡 {msg}")
             self.lamp.blink_red(duration=5)
 
         elif status_type == 'invalid_json':
-            print("❌ Response bukan JSON")
+            msg = message if message else "Response bukan JSON"
+            print(f"❌ {msg}")
             self.lamp.blink_both(duration=5)
 
         elif code == 500 or status_type == 'error':
-            print("❌ Error kirim: Terjadi kesalahan server/koneksi")
+            msg = message if message else "Terjadi kesalahan server/koneksi"
+            print(f"❌ Error kirim: {msg}")
             self.lamp.blink_both(duration=5)
 
         else:
-            print("❌ Error kirim ke server")
+            msg = message if message else "Error kirim ke server"
+            print(f"❌ {msg}")
             self.lamp.blink_both(duration=5)
 
     # =========================
