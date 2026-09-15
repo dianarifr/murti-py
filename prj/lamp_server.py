@@ -21,8 +21,6 @@ class LampRequestHandler(BaseHTTPRequestHandler):
             body = self.rfile.read(content_length).decode('utf-8') if content_length > 0 else "{}"
             data = json.loads(body or "{}")
 
-            print(f"DEBUG DATA: {data}")
-
             status_type = data.get("status")
             code = data.get("code")
             message = data.get("message")
